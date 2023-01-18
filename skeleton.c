@@ -2,8 +2,33 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <fcntl.h>
+#include <sys/types.h>
 
 #define CMDLINE_MAX 512
+
+int execute(char *cmd){
+    pid_t pid;
+	int status;
+	pid = fork();
+    if (pid == 0) {		
+        //child process
+        char *dest = "/bin/";
+        char *source = cmd;
+        char *file = strcat(dest, source);
+        char *args[] = {file, "", NULL};
+        execv(file, args);
+        perror("execv");
+        exit(1);
+    } else if (pid > 0){
+        // parent process
+        waitpid(pid, &status, 0);
+    } else {
+        perror("fork");
+        exit(1);
+    }
+    return 0;
+}
 
 int main(void)
 {
@@ -38,7 +63,7 @@ int main(void)
                 }
 
                 /* Regular command */
-                retval = system(cmd);
+                retval = execute(cmd);
                 fprintf(stdout, "Return status value for '%s': %d\n",
                         cmd, retval);
         }
