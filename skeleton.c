@@ -57,11 +57,27 @@ int main(void)
                 if (nl)
                         *nl = '\0';
 
-                /* Builtin command */
+                /* Builtin commands */
+                // pwd
+                if (!strcmp(cmd, "pwd")){
+                    char cwd[CMDLINE_MAX];
+                    if (getcwd(cwd, sizeof(cwd)) != NULL) {
+                        // executed sucessfully
+                        printf("%s\n", cwd);
+                        fprintf(stderr, "+ completed 'pwd' [0]\n");
+                    }
+                    else {
+                        //perror("Error in getcwd()");
+                        fprintf(stderr,"Error in getcwd()");
+                        fprintf(stderr, "+ completed 'pwd' [1]\n");
+                    }
+                }
+                // exit
                 if (!strcmp(cmd, "exit")) {
                         fprintf(stdout, "Bye...\n");
                         break;
                 }
+                // cd
 
                 /* Regular command */
                 retval = execute(cmd);
