@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 
 #define CMDLINE_MAX 512
 
@@ -58,13 +59,13 @@ int main(void)
 
                 /* Builtin command */
                 if (!strcmp(cmd, "exit")) {
-                        fprintf(stderr, "Bye...\n");
+                        fprintf(stdout, "Bye...\n");
                         break;
                 }
 
                 /* Regular command */
                 retval = execute(cmd);
-                fprintf(stdout, "Return status value for '%s': %d\n",
+                fprintf(stderr, "Return status value for '%s': %d\n",
                         cmd, retval);
         }
 
