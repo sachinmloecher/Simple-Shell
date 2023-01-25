@@ -6,6 +6,19 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #define CMDLINE_MAX 512
+//New function
+char *removeSpaces(char *s)
+{
+    int i = 0, j = 0;
+    while (s[i])
+    {
+        if (s[i] != ' ')
+          s[j++] = s[i];
+        i++;
+    }
+    s[j] = '\0';
+    return s;
+}
 struct fullCmd{
     char cmd0[10];  // first argument
     char restofcmd[17][50];         // entire command itself including the first argument
@@ -27,6 +40,7 @@ int execute(char* cmd){
             while(outred[x] != NULL){
             outred[++x] = strtok(NULL, ">");
             }
+            removeSpaces(outred[1]);
             strcpy(cmdcpy,outred[0]);                // put the command itself in cmdcpy
             int fd;                                     // file descriptor to open the file specified by user
             fd = open(outred[1], O_WRONLY | O_CREAT,0644);
@@ -103,4 +117,4 @@ int main(void)
                         cmd, retval);
         }
         return EXIT_SUCCESS;
-}
+} 
