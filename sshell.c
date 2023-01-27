@@ -183,8 +183,10 @@ int execute(char *cmd){
     }
     return 0;
 };
-int pipeline(char *processes[], int n){
-    int retval= 0;
+int retpipe[4];
+void pipeline(char *processes[], int n){
+    // printf("going here!!\n");
+    // int retval= 0;
     int pipefd[6];
     // n is the number of commands
     // int pid;
@@ -193,7 +195,7 @@ int pipeline(char *processes[], int n){
         pipe(pipefd+2*i);
     // pid = fork();
     // printf("Hello pipeline\n");
-    // fflush(stdout);
+    fflush(stdout);
     for(i = 0;i<n;i++){
         if (fork()==0){
             if(i == 0){
@@ -214,14 +216,12 @@ int pipeline(char *processes[], int n){
             close(pipefd[j]);
         }
         // printf("%d %s\n",1,processes[1].restofcmd[1]);
-            if(i == n-1)
-            {
-                execute(processes[i]);
-            }
-            else{
             char** args = parse_args(processes[i],0);
-            retval = execvp(args[0], args);
-            }
+            retpipe[i] = execvp(args[0], args);
+            free(args);
+            // printf("Process killed\n");
+            // fprintf(stderr, "Error: command not found\n");
+            retpipe[i] = 1;
         }
     }
     for(i = 0; i<2*(n-1);i++)
@@ -231,7 +231,7 @@ int pipeline(char *processes[], int n){
     {
         wait(&status);
     }
-    return retval;
+    // return retval;
 }
 int countpipes(char* cmd){
     int count = 0;
@@ -280,18 +280,18 @@ int main(void) {
                         processes[++m] = strtok(NULL, "|");
                     }
                     // check if any missing command in pipe
-                    if(m!=(count+1)||count>3)
+                    if(m!=(count+1))
                     {
                         printf("Error: missing command\n");
                         continue;
                     }
-                    retval = pipeline(processes,m);
-                    fprintf(stderr, "+ completed '%s'[%d] \n", removeNewline(cmdagain),retval);
-                    // for(int r = 0; r<2;r++)
-                    // {
-                    //     printf("[%ls]",*(retpipe+r));
-                    // }
-                    // printf("\n");
+                    pipeline(processes,m);
+                    fprintf(stderr, "+ completed '%s' ", removeNewline(cmdagain));
+                    for(int r = 0; r<m;r++)
+                    {
+                        printf("[%d]",retpipe[r]);
+                    }
+                    printf("\n");
                     continue;
                 }
                 else {
