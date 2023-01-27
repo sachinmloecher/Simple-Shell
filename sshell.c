@@ -78,6 +78,20 @@ bool append_outred(char *cmd) {
         return false;
     }
 };
+
+bool file_is_given(char *cmd) {
+    char *outputred = strrchr(cmd, '>');
+    if (outputred) {
+        if (!strcmp(outputred, ">\0") || !strcmp(outputred, "> \0")) {
+            return false;
+        } else {
+            return true;
+        }
+    } else {
+        return false;
+    }
+}
+
 void output_redirection(char *cmd) {
     //array of strings that stores the command and the file that the output is redirected to
     char *outred[2];
@@ -281,6 +295,11 @@ int main(void) {
                     continue;
                 }
                 else {
+                    // Check that file is given
+                    if (!file_is_given(cmd)) {
+                        fprintf(stderr, "Error: no output file\n");
+                        continue;
+                    }
                     char **args = parse_args(cmd,1);
                     // printf("Checking cd!!!\n");
                     if (!strcmp(args[0], "cd")) {
@@ -296,4 +315,4 @@ int main(void) {
                 }
         }
         return EXIT_SUCCESS;
-    };
+    }
