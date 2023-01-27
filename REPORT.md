@@ -4,7 +4,14 @@ ___Sachin Loecher and Shivam Bhandari___
 
 The Aim of this project was building a shell and understanding how a shell works.
 
-This Report aims to go over the phases of how we built this project.
+This Report aims to go over the phases of how we implemented this project.
+
+### Summary
+The 'sshell' is a program that executes user inputted jobs. Its features include:
+1. Built in commands ('exit', 'pwd', 'cd')
+2. User commands with optional arguments ('ls', 'echo'...)
+3. Piping commands (|)
+4. Two forms of output redirection (>>, >)
 
 ### Phase 0 - Preliminary Work
 
@@ -20,23 +27,20 @@ https://github.com/sachinmloecher/ECS150P1/blob/fdeac5152b10548dee5eb4f08a47177c
 
 ### Phase 1 - Switching system() to fork+exec+wait methods
 
+We implemented our own manual system() function (execute()) using the fork+exec+wait method explained in lecture. This function is only called to execute regular user supplied commands such as ls or echo. It first forks into parent and child processes, gets the inputted arguments using parsing, calls execvp() to execute the command, and returns an error if execvp returns.
+
 ### Phase 2 - Parsing arguments
 
 In this phase, we built parse_args to parse the command into a data structure. We use a struct fullCmd, which contains a string array, and an array of strings, which stores all the arguments separated into an array of strings, and a an int size, which contains the number of distinct instructions in our command. We parse the arguments using strtok, to separate them based on spaces. We then store it into an array of strings and return it.
 
-### Phase 2 - Builtin Commands
+### Phase 3 - Builtin Commands
+
+We implemented the three built in commands ('exit', 'pwd', 'cd') in the main function. This is because commands like exit and pwd do not take arguments, and will be executed regardless. 'cd' required arguments, so we parse the arguments, change the directory using the syscall 'chdir()', and handle errors appropriately. All built in commands are checked for and executed directly from the main function.
 
 ### Phase 4: Output redirection
 
-We now implement output redirection . We first check if there is ">" present in the command. We then split our command into the file to be outputted into and the command itself. We do a bunch of error management with helper functions. After that, we use dup2 to redirect the stdout to the file descriptor we opened.
+We implemented a simple function to take care of output redirection ('output_redirection()'). This function checks the command for '>>' or '>', and splits it into the given output file and the command/arguments. We then open the given file, and use the syscall 'dup2()' to redirect the stdout of the command to the file descriptor.
 
 ### Phase 5: Pipeline Commands
 
 Arguably the hardest part of our project. 
-
-
-
-
-
-
-
