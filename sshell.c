@@ -10,26 +10,38 @@
 #define CMDLINE_MAX 512
 #define MAX_ARGUMENTS 16
 #define TOKEN_MAX 32
-
+struct fullCmd{
+    char cmd0[10];  // first argument
+    char restofcmd[17][50];         // entire command itself including the first argument
+};
+int checkingForCd = 1;
 void print_prompt() {
     printf("sshell@ucd$ ");
     fflush(stdout);
 };
-
+char *removeNewline(char *s)
+{
+    int i = 0, j = 0;
+    while (s[i])
+    {
+        if (s[i] != '\n')
+          s[j++] = s[i];
+        i++;
+    }
+    s[j] = '\0';
+    return s;
+};
 void get_cmd(char *cmd) {
     fgets(cmd, CMDLINE_MAX, stdin);
 };
-
 void print_exit() {
     fprintf(stderr, "Bye...\n");
     fprintf(stderr, "+ completed 'exit' [0]\n");
 }
-
 void print_working_dir() {
     printf("%s\n", getcwd(NULL, 0));
     fprintf(stderr, "+ completed 'pwd' [0]\n");
 }
-
 int change_directory(char *dir) {
     int a = chdir(dir);
     if (a == -1) {
@@ -39,7 +51,6 @@ int change_directory(char *dir) {
         return 0;
     }
 }
-
 // Helper function to remove spaces from output redirection filename
 char *removeSpaces(char *s)
 {
@@ -53,7 +64,6 @@ char *removeSpaces(char *s)
     s[j] = '\0';
     return s;
 };
-
 bool trunc_outred(char *cmd) {
     if (strstr(cmd,">") != NULL) {
         return true;
@@ -61,7 +71,6 @@ bool trunc_outred(char *cmd) {
         return false;
     }
 };
-
 bool append_outred(char *cmd) {
     if (strstr(cmd,">>") != NULL) {
         return true;
@@ -69,33 +78,33 @@ bool append_outred(char *cmd) {
         return false;
     }
 };
-
-char* output_redirection(char *cmd, char *cmdcpy) {
+void output_redirection(char *cmd) {
     //array of strings that stores the command and the file that the output is redirected to
     char *outred[2];
     int x = 0;
     if (append_outred(cmd)) {
-        printf("Append output redirection\n");
+        // printf("Append output redirection\n");
         outred[x] = strtok(cmd, ">>");
         while(outred[x] != NULL) {
             outred[++x] = strtok(NULL, ">>");
         }
         removeSpaces(outred[1]);
-        strcpy(cmdcpy,outred[0]);
+        strcpy(cmd,outred[0]);
         int fd = open(outred[1], O_WRONLY|O_APPEND|O_CREAT, 0644);
         // redirect output to file
         dup2(fd, STDOUT_FILENO);
         close(fd);
     } else if (trunc_outred(cmd)) {
-        printf("Trunc output redirection\n");
+        // printf("Trunc output redirection\n");
         // string 0 is command itself, string 1 is the output file
         outred[x] = strtok(cmd, ">");
         while(outred[x] != NULL) {
             outred[++x] = strtok(NULL, ">");
         }
         removeSpaces(outred[1]);
+        // printf("%s\n",outred[1]);
         // put the command itself in cmdcpy
-        strcpy(cmdcpy,outred[0]);
+        strcpy(cmd,outred[0]);
         // file descriptor to open the file specified by user
         int fd = open(outred[1], O_WRONLY|O_CREAT|O_TRUNC, 0644);
         // redirect output to file
@@ -103,20 +112,15 @@ char* output_redirection(char *cmd, char *cmdcpy) {
         close(fd);
     }
 };
-
-struct fullCmd{
-    char cmd0[10];  // first argument
-    char restofcmd[17][50];         // entire command itself including the first argument
-};
-
-char** parse_args(char *cmd) {
+char** parse_args(char *cmd, int flag) {
     // to store original command
     char cmdcpy[CMDLINE_MAX];
-    output_redirection(cmd, cmdcpy);
-    //strcpy(cmdcpy,cmd);
-    int x = 0;
-    // Output redirection
-    //strcpy(cmdcpy, output_redirection(cmd));
+    strcpy(cmdcpy,cmd);
+    if(strstr(cmdcpy,">")!=NULL && !flag){
+        output_redirection(cmdcpy);
+        // printf("Entering output redirection!!\n");
+    }
+    // printf("%s\n",cmd);
     struct fullCmd c1;
     // splits the command up
     char *array[16];
@@ -129,16 +133,10 @@ char** parse_args(char *cmd) {
     for(int j = 0; j<i;j++){
         strcpy(c1.restofcmd[j],array[j]);
     }
-    // printf("%s\n",c1.cmd0);
-    // for(int j = 0; j<i;j++){
-    //     printf("%d. %s\n",j+1,c1.restofcmd[j]);
-    // }
     int n = i;
     char** args;
-    //char * args[17] 
+    //char * args[17]
     args = malloc(17*sizeof(char*));
-    // printf("%ld\n",sizeof(c.restofcmd));
-    // int n = int(sizeof(c.restofcmd))
     for(i = 0; i<n;i++){
         args[i] = malloc(33*sizeof(char));
         args[i] = c1.restofcmd[i];
@@ -150,26 +148,18 @@ char** parse_args(char *cmd) {
     //         }
     return args;
 };
-
 int execute(char *cmd){
     pid_t pid;
     int status;
     pid = fork();
     if (pid == 0) {
         // Child process
-        char** args = parse_args(cmd);
-        // Check for cd
-        if (!strcmp(args[0], "cd")) {
-            int a = change_directory(args[1]);
-            free(args);
-            return a;
-        }
-        else {
-            execvp(args[0], args);
-            free(args);
-            fprintf(stderr, "Error: command not found\n");
-            return 1;
-        }
+        char** args = parse_args(cmd,0);
+        execvp(args[0], args);
+        free(args);
+        // printf("Process killed\n");
+        fprintf(stderr, "Error: command not found\n");
+        return 1;
     } else if (pid > 0){
         // Parent process
         waitpid(pid, &status, 0);
@@ -179,12 +169,70 @@ int execute(char *cmd){
     }
     return 0;
 };
-
+int pipeline(char *processes[], int n){
+    int retval= 0;
+    int pipefd[6];
+    // n is the number of commands
+    // int pid;
+    int i;
+    for(i = 0; i<n-1;i++)
+        pipe(pipefd+2*i);
+    // pid = fork();
+    // printf("Hello pipeline\n");
+    // fflush(stdout);
+    for(i = 0;i<n;i++){
+        if (fork()==0){
+            if(i == 0){
+                dup2(pipefd[i+1], STDOUT_FILENO);
+                // close(pipefd[i+1]);
+            }
+            else if(i == n-1){
+                dup2(pipefd[2*(i-1)], STDIN_FILENO);
+                // close(pipefd[2*(i-1)]);
+            }
+            else{
+                dup2(pipefd[2*i+1], STDOUT_FILENO);
+                // close(pipefd[2*i+1]);
+                dup2(pipefd[2*(i-1)], STDIN_FILENO);
+                // close(pipefd[2*(i-1)]);
+            }
+        for(int j = 0; j< 2*(n-1); j++){
+            close(pipefd[j]);
+        }
+        // printf("%d %s\n",1,processes[1].restofcmd[1]);
+            if(i == n-1)
+            {
+                execute(processes[i]);
+            }
+            else{
+            char** args = parse_args(processes[i],0);
+            retval = execvp(args[0], args);
+            }
+        }
+    }
+    for(i = 0; i<2*(n-1);i++)
+        close(pipefd[i]);
+    int status;
+    for(i = 0; i<n; i++)
+    {
+        wait(&status);
+    }
+    return retval;
+}
+int countpipes(char* cmd){
+    int count = 0;
+    for(int i = 0;cmd[i];i++){
+        if(cmd[i]=='|')
+            count++;
+    }
+    return count;
+}
 int main(void) {
         char cmd[CMDLINE_MAX];
         while (1) {
                 char *nl;
                 int retval;
+                char cmdagain[CMDLINE_MAX];
                 /* Print prompt */
                 print_prompt();
                 /* Get command line */
@@ -207,12 +255,45 @@ int main(void) {
                     // pwd
                     print_working_dir();
                     continue;
-                } else {
-                    /* Regular command or cd*/
-                    retval = execute(cmd);
-                    fprintf(stderr, "+ completed '%s' [%d]\n", cmd, retval);
+                } else if (strstr(cmd,"|")!=NULL){
+                    strcpy(cmdagain,cmd);
+                    //int sizesofcommands[4]; // 4 different commands, each has a different size, where size is the number of args
+                    int count = countpipes(cmd);
+                    int m = 0;
+                    char* processes[4];
+                    processes[m] = strtok(cmd, "|");
+                    while(processes[m] != NULL) {
+                        processes[++m] = strtok(NULL, "|");
+                    }
+                    // check if any missing command in pipe
+                    if(m!=(count+1)||count>3)
+                    {
+                        printf("Error: missing command\n");
+                        continue;
+                    }
+                    retval = pipeline(processes,m);
+                    fprintf(stderr, "+ completed '%s'[%d] \n", removeNewline(cmdagain),retval);
+                    // for(int r = 0; r<2;r++)
+                    // {
+                    //     printf("[%ls]",*(retpipe+r));
+                    // }
+                    // printf("\n");
                     continue;
+                }
+                else {
+                    char **args = parse_args(cmd,1);
+                    // printf("Checking cd!!!\n");
+                    if (!strcmp(args[0], "cd")) {
+                        int e = change_directory(args[1]);
+                        fprintf(stderr, "+ completed '%s' [%d]\n", cmd, e);
+                    }
+                    else {
+                        // Regular command
+                        retval = execute(cmd);
+                        fprintf(stderr, "+ completed '%s' [%d]\n", cmd, retval);
+                        continue;
+                    }
                 }
         }
         return EXIT_SUCCESS;
-};
+    };
