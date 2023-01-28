@@ -49,6 +49,10 @@ Arguably the hardest part of our project. Essentially we check for '|' in the co
  
  A for loop in this function initializes the pipes according to the number of commands. We then loop through every command, calling fork to execute them in new processes. In each loop, we connect pipes to their respective inputs and outputs, and close the pipe file descriptor after. After the pipes are closed, it is a simple matter of just parsing the arguments and calling execvp. 
  
+### Testing our code
+
+We tested our code on csif manually running different commands and checking for error management.
+ 
  ### Improvements
  
  Unfortunately, we were unable to implement background jobs, but it is a feature we intend to implement in the future to complete this project. We also look to make the code more robust, and break down the code into even smaller functions for better understanding.
