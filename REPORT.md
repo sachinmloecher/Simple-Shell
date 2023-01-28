@@ -82,14 +82,15 @@ execvp.
 ### Testing our code
 
 We tested our code on csif manually running different commands and checking
-for error management.
+for error management. We also used the given tests on gradescope.
  
 ### Improvements
  
 Unfortunately, we were unable to implement background jobs, but it is a 
 feature we intend to implement in the future to complete this project. We also
 look to make the code more robust, and break down the code into even smaller 
-functions for better understanding.
+functions for better understanding. Additionally, there is much more error 
+management to take care of in case we wanted to make this shell really usable.
  
 *** ALL OUR CODE WAS WRITTEN ON OUR OWN, EXCEPT FOR THE SAMPLES OF CODE WE 
 PICKED UP FROM THE LECTURE SLIDES OF THE PROFESSOR. ***
