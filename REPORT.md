@@ -27,7 +27,7 @@ https://github.com/sachinmloecher/ECS150P1/blob/fdeac5152b10548dee5eb4f08a47177c
 
 ### Phase 1 - Switching system() to fork+exec+wait methods
 
-We implemented our own manual system() function (execute()) using the fork+exec+wait method explained in lecture. This function is only called to execute regular user supplied commands such as ls or echo. It first forks into parent and child processes, gets the inputted arguments using parsing, calls execvp() to execute the command, and returns an error if execvp returns.
+We implemented our own manual system() function (execute()) using the fork+exec+wait method explained in lecture. This function is only called to execute regular user supplied commands such as ls or echo. It first forks into parent and child processes, gets the inputted arguments using parsing, calls execvp() to execute the command, and returns an error if execvp returns. The execvp kills the child process after execution.
 
 ### Phase 2 - Parsing arguments
 
@@ -43,4 +43,14 @@ We implemented a simple function to take care of output redirection ('output_red
 
 ### Phase 5: Pipeline Commands
 
-Arguably the hardest part of our project. 
+Arguably the hardest part of our project. Essentially we check for '|' in the command and parse ot by splitting it into different commands called processes. We store it into an array and then then pass it into our pipeline function, which takes care of the rest.
+
+ #### The pipeline function
+ 
+ A for loop in this function initializes the pipes according to the number of commands. We then loop through every command, calling fork to execute them in new processes. In each loop, we connect pipes to their respective inputs and outputs, and close the pipe file descriptor after. After the pipes are closed, it is a simple matter of just parsing the arguments and calling execvp. 
+ 
+ ### Improvements
+ 
+ Unfortunately, we were unable to implement background jobs, but it is a feature we intend to implement in the future to complete this project. We also look to make the code more robust, and break down the code into even smaller functions for better understanding.
+ 
+ ##### ALL OUR CODE WAS WRITTEN ON OUR OWN, EXCEPT FOR THE SAMPLES OF CODE WE PICKED UP FROM THE LECTURE SLIDES OF THE PROFESSOR.
