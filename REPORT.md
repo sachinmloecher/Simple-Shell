@@ -1,4 +1,4 @@
-# ECS 150: Project #1 - Simple Shell - Report
+# Simple Shell
 
 ___Sachin Loecher and Shivam Bhandari___
 
